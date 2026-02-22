@@ -1,45 +1,45 @@
 ﻿# OpenClaw Skill: Audio Mastering CLI
 
-Skill compatible con OpenClaw/AgentSkills para masterizar audio por CLI sin pista de referencia.
+A skill compatible with OpenClaw/AgentSkills for CLI audio mastering without a reference track.
 
 ## Features
-- Mastering de archivos de audio (`wav`, `aiff`, `flac`, `mp3`, `m4a`).
-- Mastering del audio en video (`mp4`, `mov`, `m4v`, `mkv`, `webm`) y salida en `mp4`.
-- Cadena reproducible: EQ + compresion + limitador + loudnorm (2 pasadas).
+- Masters audio files (`wav`, `aiff`, `flac`, `mp3`, `m4a`).
+- Masters audio inside video files (`mp4`, `mov`, `m4v`, `mkv`, `webm`) and outputs `mp4`.
+- Reproducible chain: EQ + compression + limiter + 2-pass loudnorm.
 
-## Requisitos
-- `ffmpeg` disponible en `PATH`
+## Requirements
+- `ffmpeg` available in `PATH`
 - `powershell` (Windows)
 
-## Instalacion
-Clona el repo y colocalo dentro de tu carpeta `skills/` del workspace OpenClaw.
+## Installation
+Clone this repo and place it inside your OpenClaw workspace `skills/` folder.
 
 ```powershell
 git clone https://github.com/alesys/openclaw-skill-audio-mastering-cli.git
 ```
 
-## Uso (ejemplos)
-Audio a WAV + MP3:
+## Usage (examples)
+Audio to WAV + MP3:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File ".\scripts\master_media.ps1" -InputFile ".\water.wav" -MakeMp3
 ```
 
-Video MOV/MP4 a MP4 masterizado:
+MOV/MP4 video to mastered MP4:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File ".\scripts\master_media.ps1" -InputFile ".\coyo2.mov" -MakeMp3
 ```
 
-Salidas esperadas:
+Expected outputs:
 - `<base>_master.wav`
-- `<base>_master.mp3` (si `-MakeMp3`)
-- `<base>_master.mp4` (si la entrada tiene video)
+- `<base>_master.mp3` (if `-MakeMp3`)
+- `<base>_master.mp4` (if input contains video)
 
-## Limitaciones conocidas
-- Si el material entra demasiado alto, pueden aparecer avisos de clipping interno en etapas de EQ.
-- El objetivo de loudness es conservador multiplaforma (`~ -14 LUFS`), no orientado a loud masters agresivos.
-- En salida de video se conserva el stream de video (`-c:v copy`) y se recodifica solo audio a AAC 320k.
+## Known limitations
+- If source material is too hot, you may see internal clipping warnings in EQ stages.
+- Loudness target is conservative and cross-platform (`~ -14 LUFS`), not tuned for aggressive loud masters.
+- For video output, the video stream is preserved (`-c:v copy`) and only audio is re-encoded to AAC 320k.
 
 ## Version
 - `v1.0.0`
