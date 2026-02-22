@@ -1,10 +1,11 @@
-﻿# OpenClaw Skill: Audio Mastering YouTube CLI
+﻿# OpenClaw Skill: Audio Mastering CLI
 
 Skill compatible con OpenClaw/AgentSkills para masterizar audio por CLI sin referencia.
 
-## Estructura
-- `SKILL.md`
-- `scripts/master_youtube.ps1`
+## Funciones
+- Mastering de archivos de audio.
+- Mastering de audio dentro de videos (`mp4`, `mov`) y rearmado a `mp4`.
 
-## Uso
-Clona este repo y copia/usa la carpeta en `skills/` de tu workspace OpenClaw.
+## Archivos
+- `SKILL.md`
+- `scripts/master_media.ps1`

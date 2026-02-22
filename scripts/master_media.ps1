@@ -14,12 +14,16 @@ if (-not (Test-Path -LiteralPath $InputFile)) {
 }
 
 $inItem = Get-Item -LiteralPath $InputFile
+$inputExt = $inItem.Extension.ToLowerInvariant()
+$videoExts = @(".mp4", ".mov", ".m4v", ".mkv", ".webm")
+
 if ([string]::IsNullOrWhiteSpace($OutputBase)) {
-  $OutputBase = [System.IO.Path]::Combine($inItem.DirectoryName, ($inItem.BaseName + "_master_yt"))
+  $OutputBase = [System.IO.Path]::Combine($inItem.DirectoryName, ($inItem.BaseName + "_master"))
 }
 
 $outWav = "$OutputBase.wav"
 $outMp3 = "$OutputBase.mp3"
+$outMp4 = "$OutputBase.mp4"
 
 # Cadena base sin referencia:
 # 1) EQ correctiva suave (HPF/LPF + realce presencia + control low-mid)
@@ -36,14 +40,14 @@ $baseChain = @(
   "alimiter=limit=0.95:level=disabled"
 ) -join ","
 
-# Targets recomendados para YouTube
+# Target multiplaforma conservador
 $targetI = -14
 $targetTP = -1.0
 $targetLRA = 7
 
-Write-Host "[1/3] Midiendo loudness (primera pasada)..."
+Write-Host "[1/4] Midiendo loudness (primera pasada)..."
 $measureFilter = "$baseChain,loudnorm=I=${targetI}:TP=${targetTP}:LRA=${targetLRA}:print_format=json"
-$measureOutput = & ffmpeg -hide_banner -y -i "$InputFile" -af "$measureFilter" -f null NUL 2>&1 | Out-String
+$measureOutput = & ffmpeg -hide_banner -y -i "$InputFile" -vn -af "$measureFilter" -f null NUL 2>&1 | Out-String
 
 $jsonMatch = [regex]::Match($measureOutput, '\{\s*"input_i"[\s\S]*?\}')
 if (-not $jsonMatch.Success) {
@@ -52,25 +56,40 @@ if (-not $jsonMatch.Success) {
 
 $stats = $jsonMatch.Value | ConvertFrom-Json
 
-Write-Host "[2/3] Aplicando mastering (segunda pasada) a WAV..."
+Write-Host "[2/4] Aplicando mastering (segunda pasada) a WAV..."
 $secondPassLoudnorm = "loudnorm=I=${targetI}:TP=${targetTP}:LRA=${targetLRA}:measured_I=$($stats.input_i):measured_TP=$($stats.input_tp):measured_LRA=$($stats.input_lra):measured_thresh=$($stats.input_thresh):offset=$($stats.target_offset):linear=true:print_format=summary"
 $masterChain = "$baseChain,$secondPassLoudnorm"
 
-& ffmpeg -hide_banner -y -i "$InputFile" -af "$masterChain" -c:a pcm_s24le "$outWav"
-
+& ffmpeg -hide_banner -y -i "$InputFile" -vn -af "$masterChain" -c:a pcm_s24le "$outWav"
 if ($LASTEXITCODE -ne 0) {
   throw "Fallo la renderizacion WAV"
 }
 
+$inputHasVideo = $videoExts -contains $inputExt
+if ($inputHasVideo) {
+  Write-Host "[3/4] Rearmando video MP4 con audio masterizado..."
+  & ffmpeg -hide_banner -y -i "$InputFile" -i "$outWav" -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 320k -ar 48000 -movflags +faststart "$outMp4"
+  if ($LASTEXITCODE -ne 0) {
+    throw "Fallo al rearmar MP4"
+  }
+} else {
+  Write-Host "[3/4] Entrada sin video: omitiendo rearmado MP4."
+}
+
 if ($MakeMp3) {
-  Write-Host "[3/3] Exportando MP3 320 kbps..."
+  Write-Host "[4/4] Exportando MP3 320 kbps..."
   & ffmpeg -hide_banner -y -i "$outWav" -c:a libmp3lame -b:a 320k "$outMp3"
   if ($LASTEXITCODE -ne 0) {
     throw "Fallo la exportacion MP3"
   }
+} else {
+  Write-Host "[4/4] Omitiendo MP3 (usa -MakeMp3 para generarlo)."
 }
 
 Write-Host "Listo. Archivo master WAV: $outWav"
+if ($inputHasVideo) {
+  Write-Host "Video master MP4: $outMp4"
+}
 if ($MakeMp3) {
   Write-Host "Archivo master MP3: $outMp3"
 }
@@ -81,5 +100,3 @@ Write-Host ("input_tp:     {0} dBTP" -f $stats.input_tp)
 Write-Host ("input_lra:    {0} LU" -f $stats.input_lra)
 Write-Host ("input_thresh: {0}" -f $stats.input_thresh)
 Write-Host ("target_offset:{0}" -f $stats.target_offset)
-
-

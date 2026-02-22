@@ -1,32 +1,37 @@
 ﻿---
-name: audio-mastering-youtube-cli
-description: Masteriza audio por CLI sin pista de referencia con ffmpeg (EQ, compresion, limitador y objetivo YouTube).
-metadata: {"openclaw":{"emoji":"🎚️","homepage":"https://github.com/alesys/openclaw-skill-audio-mastering-youtube-cli","os":["win32"],"requires":{"bins":["ffmpeg","powershell"]}}}
+name: audio-mastering-cli
+description: Masteriza audio por CLI sin pista de referencia con ffmpeg; acepta audio o video (mp4/mov) y devuelve master en WAV/MP3 o video MP4 rearmado.
+metadata: {"openclaw":{"emoji":"🎚️","homepage":"https://github.com/alesys/openclaw-skill-audio-mastering-cli","os":["win32"],"requires":{"bins":["ffmpeg","powershell"]}}}
 ---
 
-# Audio Mastering YouTube CLI
+# Audio Mastering CLI
 
-Usa este skill cuando el usuario quiera masterizar una mezcla sin pista de referencia, desde CLI, con una cadena reproducible.
+Usa este skill cuando el usuario quiera masterizar audio sin referencia, por CLI, sobre archivo de audio o video.
+
+## Entradas soportadas
+- Audio: `wav`, `aiff`, `flac`, `mp3`, `m4a`
+- Video: `mp4`, `mov`, `m4v`, `mkv`, `webm`
 
 ## Flujo
-1. Verifica que existe el archivo de entrada (`.wav`, `.aiff`, `.flac`, etc.).
-2. Ejecuta el script del skill:
-   `powershell -ExecutionPolicy Bypass -File "{baseDir}/scripts/master_youtube.ps1" -InputFile "<ruta-archivo>" -MakeMp3`
-3. Entrega rutas de salida:
-   - WAV master: `<base>_master_yt.wav`
-   - MP3 master: `<base>_master_yt.mp3`
-4. Reporta loudness/true peak del log para validar resultado.
+1. Verifica que existe el archivo de entrada.
+2. Ejecuta:
+   `powershell -ExecutionPolicy Bypass -File "{baseDir}/scripts/master_media.ps1" -InputFile "<ruta-archivo>" -MakeMp3`
+3. Entrega salidas:
+   - WAV master: `<base>_master.wav`
+   - MP3 master: `<base>_master.mp3` (si `-MakeMp3`)
+   - Si la entrada es video: `<base>_master.mp4` con video original + audio masterizado AAC 320k
+4. Reporta loudness/true peak del log.
 
 ## Cadena aplicada
-- Filtros tonales: `highpass` + `lowpass`
+- `highpass` + `lowpass`
 - EQ suave de correccion/mejora
-- `acompressor` (control de dinamica)
-- `alimiter` (seguridad de picos)
-- `loudnorm` en dos pasadas a objetivo YouTube
+- `acompressor`
+- `alimiter`
+- `loudnorm` dos pasadas (objetivo conservador multiplaforma)
 
-## Comando de verificacion (opcional)
+## Verificacion opcional
 `ffmpeg -hide_banner -i "<archivo_master.wav>" -af "loudnorm=I=-14:TP=-1:LRA=7:print_format=summary" -f null NUL`
 
 ## Notas
-- El script produce un master seguro para plataformas tipo YouTube; ajusta a ~`-14 LUFS` integrado.
-- Si el material llega demasiado hot, puede haber avisos de clipping interno en etapas de EQ; en ese caso baja entrada o reduce ganancia de EQ antes de reexportar.
+- Para video: se conserva el stream de video (`-c:v copy`) y solo se reemplaza audio.
+- Si hay avisos de clipping interno en EQ, bajar input o ganancias de EQ y reexportar.
