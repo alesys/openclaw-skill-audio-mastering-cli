@@ -1,6 +1,6 @@
 ﻿---
 name: audio-mastering-cli
-description: Masteriza audio por CLI sin pista de referencia con ffmpeg; acepta audio o video (mp4/mov) y devuelve master en WAV/MP3 o video MP4 rearmado.
+description: CLI audio mastering without a reference track using ffmpeg; accepts audio or video inputs and outputs mastered WAV/MP3 or remuxed MP4.
 metadata: {"openclaw":{"emoji":"🎚️","homepage":"https://github.com/alesys/openclaw-skill-audio-mastering-cli","os":["win32"],"requires":{"bins":["ffmpeg","powershell"]}}}
 ---
 
